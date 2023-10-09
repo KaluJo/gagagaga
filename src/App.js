@@ -16,16 +16,19 @@ function App() {
       },
       body: JSON.stringify({
         text: text,
-        sourceLang: 'en',
-        targetLang: 'ko'
+        sourceLang: 'EN',
+        targetLang: 'KO'
       })
     });
 
     if (response.ok) {
       const data = await response.json();
-      setTranslatedText(data.message.result.translatedText);
+      // DeepL's response structure:
+      if (data.translations && data.translations.length > 0) {
+        setTranslatedText(data.translations[0].text);
+      }
     } else {
-      console.error('Failed to translate');
+      console.error('Failed to translate', response);
     }
   };
 
