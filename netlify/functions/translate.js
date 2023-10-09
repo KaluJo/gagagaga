@@ -6,13 +6,20 @@ exports.handler = async (event, context) => {
     }
 
     const { text, sourceLang, targetLang } = JSON.parse(event.body);
+    const apiKey = process.env.DEEPL_API_KEY;
 
     try {
-        const response = await axios.post('https://api.deepl.com/v2/translate', {
-            auth_key: process.env.DEEPL_API_KEY,
-            text: text,
+        const response = await axios.post(`https://api-free.deepl.com/v2/translate`, 
+        {
+            text: [text],
             source_lang: sourceLang,
             target_lang: targetLang
+        },
+        {
+            headers: {
+                'Authorization': `DeepL-Auth-Key ${apiKey}`,
+                'Content-Type': 'application/json'
+            }
         });
 
         return { statusCode: 200, body: JSON.stringify(response.data) };
