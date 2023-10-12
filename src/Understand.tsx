@@ -66,6 +66,17 @@ const Understand: React.FC<UnderstandProps> = ({ groups, setGroups, sentences, s
     navigate('/groups');
   }
 
+  const speak = (text: string) => {
+    const synth = window.speechSynthesis;
+
+    synth.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'ja-JP';
+
+    synth.speak(utterance);
+  };
+
   const [currentWords, setCurrentWords] = useState<Word[]>(shuffleArray(groups.find(group => group.name === groupName)?.words || []));
   const [activeWordIndex, setActiveWordIndex] = useState(0);
 
@@ -103,20 +114,22 @@ const Understand: React.FC<UnderstandProps> = ({ groups, setGroups, sentences, s
   };
 
   const handleGenerateSentence = async () => {
-    const maxWords = 30;
+    const maxWords = 50;
     const selectedWords = shuffleArray(currentWords).slice(0, maxWords).map(word => word.JA);
-    const promptContent = `Generate 7 natural sentences (a sentence can have multiple sentences) in Japanese using at least 7 of these words, formatting the sentences in array format, including the correct furigana in parentheses beside the sentence: ${selectedWords.join(", ")}`;
+    const promptContent = `Great job. Now generate 7 natural sentences or sentence clusters (like a mini-story involving multiple sentences) in Japanese using at least 7 of these words, formatting the sentences in the same array format, including the correct furigana in parentheses beside the sentence.: ${selectedWords.join(", ")}`;
 
     try {
       const response = await openai.chat.completions.create({
         model: "gpt-4",
         messages: [
-          { role: 'system', content: 'You are an assistant that creates natural sentences based on a Japanese word for the purpose of language learning to fluency, returning an array of 5 sentences, including the correct furigana reading in parentheses.' },
+          { role: 'system', content: 'You are an assistant that creates natural sentences based on a Japanese word for the purpose of language learning to fluency, returning an array of 5 sentences, including the correct furigana reading in parentheses. Make sure that the sentence difficulty is no higher than JLPT N3-N2 and covers sentences that one might really encounter in Japan or in conversation.' },
           { role: 'user', content: `Generate 5 natural sentences in Japanese using at least 5 of these words, formatting the sentences in array format, including the correct furigana in parentheses beside the sentence: 食べる, とっても, 難しい, ありがとうございます` },
           { role: 'assistant', content: "['この問題はとっても難しいです。(このもんだいはとってもむずかしいです。)','昨日の晩御飯を食べるのがとっても楽しかった。(きのうのばんごはんをたべるのがとってもたのしかった)','難しい問題を解決してくれて、ありがとうございます。(むずかしいもんだいをかいけつしてくれて、ありがとうございます。)','私は新しい料理を食べるのがとっても好きです。(わたしはあたらしいりょうりをたべるのがとってもすきです。)','このゲームは食べることが関連していて、とっても難しいです。(このげーむはたべることがかんれんしていて、とってもむずかしいです。)']" },
           { role: 'user', content: promptContent }
         ]
       });
+
+      console.log(response);
 
       let generatedSentencesData = response.choices[0].message.content.split(',').map(text => {
         // Cleaning up any unwanted characters before parsing
@@ -221,7 +234,7 @@ const Understand: React.FC<UnderstandProps> = ({ groups, setGroups, sentences, s
       <Button onClick={handleGenerateSentence}>Generate Sentences</Button>
       {groupSentences.map((sentence, index) => (
         <WordCard style={{ width: '100%' }} key={index}>
-          <Title>{sentence.JA}</Title>
+          <Title style={{ paddingLeft: 20, paddingRight: 20 }} onClick={() => speak(sentence.JA)}>{sentence.JA}</Title>
           <Translation style={{ marginTop: -10 }}>{sentence.furigana}</Translation>
           <Translation style={{ marginTop: -10 }}>{sentence.KO}</Translation>
           <Input
@@ -234,7 +247,7 @@ const Understand: React.FC<UnderstandProps> = ({ groups, setGroups, sentences, s
         </WordCard>
       ))}
 
-      <Button style={{ marginTop: 20 }} onClick={handleSave}>Save Progress</Button>
+      <Button onClick={handleSave}>Save Progress</Button>
     </>
   );
 }

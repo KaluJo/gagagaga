@@ -32,7 +32,7 @@ const AddPage: React.FC<AddPageProps> = ({ groups, setGroups }) => {
   const [text, setText] = useState<string>('');
   const [translations, setTranslations] = useState<Word[]>([]);
   const [currentGroupName, setCurrentGroupName] = useState<string>('');
-  const [creatingNewGroup, setCreatingNewGroup] = useState(false);
+  const [creatingNewGroup, setCreatingNewGroup] = useState(true);
   const [partOfSpeeches, setPartOfSpeeches] = useState<string[]>([]);
   const partOfSpeechOptions = ['Verb', 'Grammar', 'Phrase', 'Noun', 'Descriptor'];
 

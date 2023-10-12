@@ -146,6 +146,17 @@ const Memorize: React.FC<MemorizeProps> = ({ groups, setGroups }) => {
     }
   };
 
+  const speak = (text: string) => {
+    const synth = window.speechSynthesis;
+
+    synth.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'ja-JP';
+
+    synth.speak(utterance);
+  };
+
   const calculateAccuracy = (typed: string, correct: string, alt: string) => {
     let matchedChars = 0;
     let matchedAlt = 0;
@@ -212,6 +223,8 @@ const Memorize: React.FC<MemorizeProps> = ({ groups, setGroups }) => {
     const newRevealStatus = { ...revealTranslation, [currentWords[activeWordIndex].JA]: true };
     setRevealTranslation(newRevealStatus);
 
+    speak(currentWords[activeWordIndex].JA);
+
     const newWords = [...currentWords];
     newWords[activeWordIndex].memorization = Math.min(newWords[activeWordIndex].memorization + 0.05, 1);
     setCurrentWords(newWords);
@@ -226,7 +239,7 @@ const Memorize: React.FC<MemorizeProps> = ({ groups, setGroups }) => {
         <WordCard
           ref={(el) => wordCardRefs.current[index] = el}
           key={index}
-          onClick={() => { setActiveWordIndex(index); }}
+          onClick={() => { setActiveWordIndex(index); speak(word.furigana); }}
           className={activeWordIndex === index ? 'active' : ''}
         >
           {testType === 'Flip' ? (
