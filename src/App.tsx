@@ -7,6 +7,7 @@ import { Helmet } from 'react-helmet';
 
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import Memorize from './Memorize';
+import Understand from './Understand';
 
 interface Word {
   JA: string;
@@ -24,12 +25,30 @@ interface Group {
   words: Word[];
 }
 
+interface Sentence {
+  JA: string;
+  furigana: string;
+  KO: string;
+  EN: string;
+  ZH: string;
+  FR: string;
+  memorization: number;
+  notes: string[];
+}
+
+interface Sentences {
+  name: string;
+  sentences: Sentence[];
+}
+
 const App: React.FC = () => {
 
   const [groups, setGroups] = useState<Group[]>([]);
+  const [sentences, setSentences] = useState<Sentences[]>();
 
   useEffect(() => {
     fetchGroups();
+    fetchSentences();
   }, []);
 
   const fetchGroups = async () => {
@@ -42,6 +61,16 @@ const App: React.FC = () => {
     }
   };
 
+  const fetchSentences = async () => {
+    const response = await fetch('/.netlify/functions/getSentences');
+    const data = await response.json();
+    if (Array.isArray(data)) {
+      setSentences(data);
+    } else {
+      console.error('Expected an array but got:', data);
+    }
+  };
+
   return (
     <BrowserRouter>
       <GlobalStyle />
@@ -49,7 +78,7 @@ const App: React.FC = () => {
         <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
       </Helmet>
       <Container>
-        <h1>は哈하ha</h1>
+        <h1>Retreev</h1>
 
         <SwitchButtonGroup>
           <StyledLink to="/add">
@@ -64,6 +93,7 @@ const App: React.FC = () => {
           <Route path="/add" element={<AddPage groups={groups} setGroups={setGroups} />} />
           <Route path="/groups" element={<GroupsPage groups={groups} setGroups={setGroups} />} />
           <Route path="/memorize" element={<Memorize groups={groups} setGroups={setGroups} />} />
+          <Route path="/understand" element={<Understand groups={groups} setGroups={setGroups} sentences={sentences} setSentences={setSentences} />} />
         </Routes>
       </Container>
     </BrowserRouter>

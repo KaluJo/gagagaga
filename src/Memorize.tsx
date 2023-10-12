@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Button, TypeTestInput, WordCard, Title, Translation, Progress, ProgressBarContainer, ProgressBar } from './styles';
 
 import { useLocation, useNavigate } from 'react-router-dom';
+import { getTranslation } from './utils';
 
 interface Word {
   JA: string;
@@ -35,7 +36,7 @@ const Memorize: React.FC<MemorizeProps> = ({ groups, setGroups }) => {
   const state = location.state as MemorizeLocationState;
   const { groupName, testType } = state;
 
-  const [currentWords, setCurrentWords] = useState<Word[]>(groups.find(group => group.name === groupName)?.words || []);
+  const [currentWords, setCurrentWords] = useState<Word[]>(shuffleArray(groups.find(group => group.name === groupName)?.words || []));
   const [activeWordIndex, setActiveWordIndex] = useState(0);
   const [revealTranslation, setRevealTranslation] = useState<{ [key: string]: boolean }>({});
   const [evaluationStatus, setEvaluationStatus] = useState<{ [key: string]: 'correct' | 'incorrect' }>({});
@@ -45,6 +46,15 @@ const Memorize: React.FC<MemorizeProps> = ({ groups, setGroups }) => {
 
   const hasInitialized = useRef(false);
   const inputRefs = useRef<HTMLInputElement[]>([]);
+
+  function shuffleArray<T>(array: T[]): T[] {
+    const shuffled: T[] = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; // Swap the elements
+    }
+    return shuffled;
+  }
 
   useEffect(() => {
     if (currentWords) {
@@ -57,12 +67,6 @@ const Memorize: React.FC<MemorizeProps> = ({ groups, setGroups }) => {
       hasInitialized.current = true;
     }
   }, []);
-
-  useEffect(() => {
-    if (testType === "Type") {
-      inputRefs.current[activeWordIndex]?.focus();
-    }
-  }, [activeWordIndex, testType]);
 
   useEffect(() => {
     if (testType === "Type") {
@@ -225,12 +229,14 @@ const Memorize: React.FC<MemorizeProps> = ({ groups, setGroups }) => {
                 }}>{word.JA}</Title>
               ) : (
                 testType === "Type" && (
-                  <TypeTestInput
-                    key={word.JA}
-                    ref={(el) => inputRefs.current[index] = el}
-                    type="text"
-                    onKeyDown={e => e.key === 'Enter' && handleEnterPress(e, word.JA)}
-                  />
+                  <>
+                    <TypeTestInput
+                      key={word.JA}
+                      ref={(el) => inputRefs.current[index] = el}
+                      type="text"
+                      onKeyDown={e => e.key === 'Enter' && handleEnterPress(e, word.JA)}
+                    />
+                  </>
                 )
               )}
             </>

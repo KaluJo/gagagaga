@@ -32,6 +32,7 @@ const GroupsPage: React.FC<GroupPageProps> = ({ groups, setGroups }) => {
 
   const flipButtonRef = React.useRef<HTMLButtonElement>(null);
   const typeButtonRef = React.useRef<HTMLButtonElement>(null);
+  const readButtonRef = React.useRef<HTMLButtonElement>(null);
 
   const computeGroupData = (group: Group) => {
     const totalWords = group.words.length;
@@ -53,11 +54,16 @@ const GroupsPage: React.FC<GroupPageProps> = ({ groups, setGroups }) => {
         case "ArrowLeft":
           flipButtonRef.current?.focus();
           break;
+        case "ArrowDown":
+          readButtonRef.current?.focus();
+          break;
         case "Enter":
           if (document.activeElement === flipButtonRef.current) {
             handleTypeSelect('Flip');
           } else if (document.activeElement === typeButtonRef.current) {
             handleTypeSelect('Type');
+          } else if (document.activeElement === readButtonRef.current) {
+            handleTypeSelect('Read');
           }
           break;
         default:
@@ -83,7 +89,11 @@ const GroupsPage: React.FC<GroupPageProps> = ({ groups, setGroups }) => {
     setIsModalOpen(false);
 
     if (selectedGroupName) {
-      navigate('/memorize', { state: { groupName: selectedGroupName, testType } });
+      if (testType === "Read") {
+        navigate('/understand', { state: { groupName: selectedGroupName, testType } });
+      } else {
+        navigate('/memorize', { state: { groupName: selectedGroupName, testType } });
+      }
     }
   };
 
@@ -98,6 +108,9 @@ const GroupsPage: React.FC<GroupPageProps> = ({ groups, setGroups }) => {
             </ModalButton>
             <ModalButton ref={typeButtonRef} tabIndex={0} aria-label="Type Test" onClick={() => handleTypeSelect('Type')}>
               {"Type"}
+            </ModalButton>
+            <ModalButton ref={readButtonRef} tabIndex={0} aria-label="Read Test" onClick={() => handleTypeSelect('Read')}>
+              {"Read"}
             </ModalButton>
           </Modal>
         </>
