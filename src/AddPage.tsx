@@ -3,8 +3,11 @@ import { InputGroup, PartOfSpeechButton, PartOfSpeechContainer, StyledSelect, La
 import pinyin from 'pinyin';
 import { getTranslation } from './utils';
 
+import OpenAIApi from 'openai';
+
 interface Word {
   JA: string;
+  furigana: string;
   KO: string;
   EN: string;
   ZH: string;
@@ -33,13 +36,40 @@ const AddPage: React.FC<AddPageProps> = ({ groups, setGroups }) => {
   const [partOfSpeeches, setPartOfSpeeches] = useState<string[]>([]);
   const partOfSpeechOptions = ['Verb', 'Grammar', 'Phrase', 'Noun', 'Descriptor'];
 
+  const openai = new OpenAIApi({
+    apiKey: process.env.REACT_APP_OPENAI_API_KEY,
+    dangerouslyAllowBrowser: true
+  });
+
   const handleBulkTranslate = async () => {
     const words = text.split(/[\s,、]+/);
-    console.log(words);
+
+    let furiganaWords = [];
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4",
+        messages: [
+          { role: 'system', content: 'You are an assistant that takes comma-separated Japanese words and returns the same comma-separated list but in furigana reading (without Kanji).' },
+          { role: 'user', content: `Given this list of comma-separated Japanese words, return the same comma-separated list in furigana reading (no Kanji): 食べる, 難しい` },
+          { role: 'assistant', content: "たべる, むずかしい" },
+          { role: 'user', content: `Given this list of comma-separated Japanese words, return the same comma-separated list in furigana reading (no Kanji): ${text}` }
+        ]
+      });
+
+      const furiganaResponse = response.choices[0].message.content;
+
+      const cleanedFurigana = furiganaResponse.replace(/[A-Za-z\[\]]/g, '');
+
+      furiganaWords = cleanedFurigana.split(',').map(word => word.trim());
+    } catch (error) {
+      console.error("Error fetching furigana:", error);
+    }
 
     let newTranslations = [...translations];
 
-    for (let word of words) {
+    for (let i = 0; i < words.length; i++) {
+      let word = words[i];
       let korean = await getTranslation(word, 'JA', 'KO');
       let english = await getTranslation(word, 'JA', 'EN');
       let chinese = await getTranslation(word, 'JA', 'ZH');
@@ -51,9 +81,12 @@ const AddPage: React.FC<AddPageProps> = ({ groups, setGroups }) => {
 
       let french = await getTranslation(word, 'JA', 'FR');
 
+      let furigana = (i < furiganaWords.length) ? furiganaWords[i] : '';
+
       if (korean && english && chinese) {
         newTranslations.push({
           JA: word,
+          furigana: furigana,
           KO: korean.translations[0].text,
           EN: english.translations[0].text,
           ZH: chinese.translations[0].text,
@@ -156,6 +189,11 @@ const AddPage: React.FC<AddPageProps> = ({ groups, setGroups }) => {
           <TranslationCard>
             <TranslationLabel>日本語</TranslationLabel>
             <StyledInput value={trans.JA} onChange={e => updateTranslation(index, 'JA', e.target.value)} />
+          </TranslationCard>
+
+          <TranslationCard>
+            <TranslationLabel>ふりがな</TranslationLabel>
+            <StyledInput value={trans.furigana} onChange={e => updateTranslation(index, 'furigana', e.target.value)} />
           </TranslationCard>
 
           <TranslationCard>

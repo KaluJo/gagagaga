@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 interface Word {
   JA: string;
+  furigana: string;
   KO: string;
   EN: string;
   ZH: string;

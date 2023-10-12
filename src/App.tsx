@@ -11,6 +11,7 @@ import Understand from './Understand';
 
 interface Word {
   JA: string;
+  furigana: string;
   KO: string;
   EN: string;
   ZH: string;

@@ -9,6 +9,7 @@ import OpenAIApi from 'openai';
 
 interface Word {
   JA: string;
+  furigana: string;
   KO: string;
   EN: string;
   ZH: string;
@@ -102,9 +103,9 @@ const Understand: React.FC<UnderstandProps> = ({ groups, setGroups, sentences, s
   };
 
   const handleGenerateSentence = async () => {
-    const maxWords = 20;
+    const maxWords = 30;
     const selectedWords = shuffleArray(currentWords).slice(0, maxWords).map(word => word.JA);
-    const promptContent = `Generate 7 natural sentences (a sentence can have multiple sentences, up to 5) in Japanese using at least 7 of these words, formatting the sentences in array format, including the correct furigana in parentheses beside the sentence: ${selectedWords.join(", ")}`;
+    const promptContent = `Generate 7 natural sentences (a sentence can have multiple sentences) in Japanese using at least 7 of these words, formatting the sentences in array format, including the correct furigana in parentheses beside the sentence: ${selectedWords.join(", ")}`;
 
     try {
       const response = await openai.chat.completions.create({

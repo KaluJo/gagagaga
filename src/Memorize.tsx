@@ -7,6 +7,7 @@ import { getTranslation } from './utils';
 
 interface Word {
   JA: string;
+  furigana: string;
   KO: string;
   EN: string;
   ZH: string;
@@ -40,6 +41,9 @@ const Memorize: React.FC<MemorizeProps> = ({ groups, setGroups }) => {
   const [activeWordIndex, setActiveWordIndex] = useState(0);
   const [revealTranslation, setRevealTranslation] = useState<{ [key: string]: boolean }>({});
   const [evaluationStatus, setEvaluationStatus] = useState<{ [key: string]: 'correct' | 'incorrect' }>({});
+
+  const [hoveredWordIndex, setHoveredWordIndex] = useState<number | null>(null);
+  const wordCardRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const navigate = useNavigate();
   const consecutiveEnters = useRef(0);
@@ -77,7 +81,7 @@ const Memorize: React.FC<MemorizeProps> = ({ groups, setGroups }) => {
   useEffect(() => {
     const handleSpace = (event: KeyboardEvent) => {
       const currentRevealStatus = revealTranslation[currentWords[activeWordIndex].JA];
-      if (event.code === "Space") {
+      if (event.code === "Space" || event.code === "KeyM") {
         if (currentRevealStatus) {
           handleNext();
         } else {
@@ -98,10 +102,14 @@ const Memorize: React.FC<MemorizeProps> = ({ groups, setGroups }) => {
   }
 
   const handleNext = () => {
-    setActiveWordIndex((prevIndex) => (prevIndex + 1) % currentWords.length);
+    setActiveWordIndex(prevIndex => {
+      const nextIndex = (prevIndex + 1) % currentWords.length;
+      wordCardRefs.current[nextIndex]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return nextIndex;
+    });
   };
 
-  const handleEnterPress = (e: React.KeyboardEvent<HTMLInputElement>, correctAnswer: string) => {
+  const handleEnterPress = (e: React.KeyboardEvent<HTMLInputElement>, correctAnswer: string, alternateAnswer: string) => {
     if (e.key !== 'Enter') {
       consecutiveEnters.current = 0;
       return;
@@ -116,7 +124,7 @@ const Memorize: React.FC<MemorizeProps> = ({ groups, setGroups }) => {
     const inputElement = e.target as HTMLInputElement;
     const typedValue = inputElement.value;
 
-    const isCorrect = evaluateTypedAnswer(typedValue, correctAnswer);
+    const isCorrect = evaluateTypedAnswer(typedValue, correctAnswer, alternateAnswer);
     setEvaluationStatus(prev => ({ ...prev, [correctAnswer]: isCorrect ? 'correct' : 'incorrect' }));
 
     inputElement.value = "";
@@ -126,8 +134,8 @@ const Memorize: React.FC<MemorizeProps> = ({ groups, setGroups }) => {
     handleNext();
   };
 
-  const evaluateTypedAnswer = (typedValue: string, correctAnswer: string): boolean => {
-    const accuracy = calculateAccuracy(typedValue, correctAnswer);
+  const evaluateTypedAnswer = (typedValue: string, correctAnswer: string, alternateAnswer: string): boolean => {
+    const accuracy = calculateAccuracy(typedValue, correctAnswer, alternateAnswer);
 
     if (accuracy >= 0.75) {
       handleCorrectTyping(correctAnswer);
@@ -138,12 +146,18 @@ const Memorize: React.FC<MemorizeProps> = ({ groups, setGroups }) => {
     }
   };
 
-  const calculateAccuracy = (typed: string, correct: string) => {
+  const calculateAccuracy = (typed: string, correct: string, alt: string) => {
     let matchedChars = 0;
+    let matchedAlt = 0;
+
     for (let i = 0; i < Math.min(typed.length, correct.length); i++) {
       if (typed[i] === correct[i]) matchedChars++;
     }
-    return matchedChars / correct.length;
+
+    for (let i = 0; i < Math.min(typed.length, alt.length); i++) {
+      if (typed[i] === alt[i]) matchedAlt++;
+    }
+    return Math.max(matchedChars / correct.length, matchedAlt / alt.length);
   };
 
   const handleCorrectTyping = (correctAnswer: string) => {
@@ -207,26 +221,38 @@ const Memorize: React.FC<MemorizeProps> = ({ groups, setGroups }) => {
   };
 
   return (
-    <>
+    <div style={{ marginBottom: 500 }}>
       {currentWords.map((word, index) => (
         <WordCard
+          ref={(el) => wordCardRefs.current[index] = el}
           key={index}
           onClick={() => { setActiveWordIndex(index); }}
           className={activeWordIndex === index ? 'active' : ''}
         >
           {testType === 'Flip' ? (
             <>
-              <Title>{word.JA}</Title>
+              <Title
+                onMouseEnter={() => setHoveredWordIndex(index)}
+                onMouseLeave={() => setHoveredWordIndex(null)}
+              >
+                {hoveredWordIndex === index ? word.furigana : word.JA}
+              </Title>
               {revealTranslation[word.JA] && <Translation style={{ marginTop: -10, marginBottom: 25 }}>{word.KO}<br />{word.EN}<br />{word.ZH} {word.ZH_pinyin}<br />{word.FR}</Translation>}
             </>
           ) : (
             <>
               <Translation>{word.KO}<br />{word.EN}<br />{word.ZH} {word.ZH_pinyin}<br />{word.FR}</Translation>
               {revealTranslation[word.JA] ? (
-                <Title style={{
-                  marginTop: 0,
-                  color: evaluationStatus[word.JA] === 'correct' ? 'green' : evaluationStatus[word.JA] === 'incorrect' ? 'red' : '#ddd'
-                }}>{word.JA}</Title>
+                <Title
+                  style={{
+                    marginTop: 0,
+                    color: evaluationStatus[word.JA] === 'correct' ? 'green' : evaluationStatus[word.JA] === 'incorrect' ? 'red' : '#ddd'
+                  }}
+                  onMouseEnter={() => setHoveredWordIndex(index)}
+                  onMouseLeave={() => setHoveredWordIndex(null)}
+                >
+                  {hoveredWordIndex === index ? word.furigana : word.JA}
+                </Title>
               ) : (
                 testType === "Type" && (
                   <>
@@ -234,7 +260,7 @@ const Memorize: React.FC<MemorizeProps> = ({ groups, setGroups }) => {
                       key={word.JA}
                       ref={(el) => inputRefs.current[index] = el}
                       type="text"
-                      onKeyDown={e => e.key === 'Enter' && handleEnterPress(e, word.JA)}
+                      onKeyDown={e => e.key === 'Enter' && handleEnterPress(e, word.JA, word.furigana)}
                     />
                   </>
                 )
@@ -247,7 +273,7 @@ const Memorize: React.FC<MemorizeProps> = ({ groups, setGroups }) => {
         </WordCard>
       ))}
       <Button style={{ marginTop: 20 }} onClick={handleSave}>Save Progress</Button>
-    </>
+    </div>
   );
 }
 
