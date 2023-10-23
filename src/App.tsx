@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Container, GlobalStyle, Button, StyledLink, SwitchButton, SwitchButtonGroup } from './styles';
 import GroupsPage from './GroupsPage';
 import AddPage from './AddPage';
+import AddPageDE from './AddPageDE';
+import GroupsPageDE from './GroupsPageDE';
+import MemorizeDE from './MemorizeDE';
 
 import { Helmet } from 'react-helmet';
 
@@ -26,6 +29,21 @@ interface Group {
   words: Word[];
 }
 
+interface DEWord {
+  DE_word: string;
+  EN_word: string;
+  DE_sentence: string;
+  EN_sentence: string;
+  memorization: number;
+  notes: string[];
+  gender: 'm' | 'f' | 'n' | 'N/A';
+}
+
+interface DEGroup {
+  name: string;
+  words: DEWord[];
+}
+
 interface Sentence {
   JA: string;
   furigana: string;
@@ -44,16 +62,16 @@ interface Sentences {
 
 const App: React.FC = () => {
 
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [sentences, setSentences] = useState<Sentences[]>();
+  const [groups, setGroups] = useState<DEGroup[]>([]);
+  // const [sentences, setSentences] = useState<Sentences[]>();
 
   useEffect(() => {
     fetchGroups();
-    fetchSentences();
+    // fetchSentences();
   }, []);
 
   const fetchGroups = async () => {
-    const response = await fetch('/.netlify/functions/getGroups');
+    const response = await fetch('/.netlify/functions/getGroupsDE');
     const data = await response.json();
     if (Array.isArray(data)) {
       setGroups(data);
@@ -62,15 +80,15 @@ const App: React.FC = () => {
     }
   };
 
-  const fetchSentences = async () => {
-    const response = await fetch('/.netlify/functions/getSentences');
-    const data = await response.json();
-    if (Array.isArray(data)) {
-      setSentences(data);
-    } else {
-      console.error('Expected an array but got:', data);
-    }
-  };
+  // const fetchSentences = async () => {
+  //   const response = await fetch('/.netlify/functions/getSentences');
+  //   const data = await response.json();
+  //   if (Array.isArray(data)) {
+  //     setSentences(data);
+  //   } else {
+  //     console.error('Expected an array but got:', data);
+  //   }
+  // };
 
   return (
     <BrowserRouter>
@@ -91,10 +109,10 @@ const App: React.FC = () => {
         </SwitchButtonGroup>
 
         <Routes>
-          <Route path="/add" element={<AddPage groups={groups} setGroups={setGroups} />} />
-          <Route path="/groups" element={<GroupsPage groups={groups} setGroups={setGroups} />} />
-          <Route path="/memorize" element={<Memorize groups={groups} setGroups={setGroups} />} />
-          <Route path="/understand" element={<Understand groups={groups} setGroups={setGroups} sentences={sentences} setSentences={setSentences} />} />
+          <Route path="/add" element={<AddPageDE groups={groups} setGroups={setGroups} />} />
+          <Route path="/groups" element={<GroupsPageDE groups={groups} setGroups={setGroups} />} />
+          <Route path="/memorize" element={<MemorizeDE groups={groups} setGroups={setGroups} />} />
+          {/* <Route path="/understand" element={<Understand groups={groups} setGroups={setGroups} sentences={sentences} setSentences={setSentences} />} /> */}
         </Routes>
       </Container>
     </BrowserRouter>
