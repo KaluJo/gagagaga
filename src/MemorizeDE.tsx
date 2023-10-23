@@ -146,7 +146,7 @@ const MemorizeDE: React.FC<DEMemorizeProps> = ({ groups, setGroups }) => {
 
   const handleSave = async () => {
     try {
-      const response = await fetch("/.netlify/functions/updateGroup", {
+      const response = await fetch("/.netlify/functions/updateGroupDE", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
